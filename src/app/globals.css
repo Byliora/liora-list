@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+/* Brand: Option B, Wine, Cream & Blush (phase 0). The app is wine-first and deliberately single-theme. */
+:root {
+  --wine: #7b0323;
+  --wine-band: #5e021a;
+  --wine-card: #8a1231;
+  --wine-line: #a0364c;
+  --cream: #fbf3e8;
+  --cream-muted: #ebcfc7;
+  --blush: #f6c9cf;
+  --grad-start: #d7263d;
+  --grad-end: #fd5068;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-wine: var(--wine);
+  --color-wine-band: var(--wine-band);
+  --color-wine-card: var(--wine-card);
+  --color-wine-line: var(--wine-line);
+  --color-cream: var(--cream);
+  --color-cream-muted: var(--cream-muted);
+  --color-blush: var(--blush);
+  --color-grad-start: var(--grad-start);
+  --color-grad-end: var(--grad-end);
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+}
+
+html,
+body {
+  background: var(--wine);
+  color: var(--cream);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
