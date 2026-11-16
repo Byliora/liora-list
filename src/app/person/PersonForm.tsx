@@ -336,7 +336,7 @@ export function PersonForm() {
 
   if (!loaded) {
     return (
-      <Shell title="Loading…">
+      <Shell title="Loading…" back={{ href: "/", label: "People" }}>
         <p className="text-cream-muted">Loading…</p>
       </Shell>
     );
@@ -345,11 +345,7 @@ export function PersonForm() {
   return (
     <Shell
       title={isNew ? "Add a person" : fullName(draft) || "Person"}
-      action={
-        <Link href="/" className="text-cream-muted underline underline-offset-4">
-          Back
-        </Link>
-      }
+      back={{ href: "/", label: "People" }}
     >
       {!isNew && (
         <div className="card flex flex-col gap-3 p-4">

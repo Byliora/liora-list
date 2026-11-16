@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { db } from "@/lib/supabase";
 import { Wordmark } from "./Wordmark";
 import { DemoBanner } from "./DemoBanner";
+import { BackButton } from "./BackButton";
 
 const NAV = [
   { href: "/", label: "People" },
@@ -13,7 +14,17 @@ const NAV = [
   { href: "/more", label: "More" },
 ];
 
-export function Shell({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+export function Shell({
+  title,
+  action,
+  back,
+  children,
+}: {
+  title: string;
+  action?: ReactNode;
+  back?: { href: string; label: string };
+  children: ReactNode;
+}) {
   const path = usePathname();
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -25,6 +36,7 @@ export function Shell({ title, action, children }: { title: string; action?: Rea
         <DemoBanner className="mx-auto mt-2 max-w-2xl" />
       </header>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-28 pt-4">
+        {back && <BackButton href={back.href} label={back.label} />}
         <h1 className="font-display text-3xl italic text-blush">{title}</h1>
         {children}
       </main>
