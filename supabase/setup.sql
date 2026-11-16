@@ -98,3 +98,13 @@ create policy "photos owner only" on storage.objects
   for all to authenticated
   using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text)
   with check (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------------------------------------------------------------
+-- Keep-alive: a twice-weekly GitHub job calls this so the free
+-- project never pauses. It returns 1 and reads no data.
+-- ---------------------------------------------------------------
+create or replace function public.keepalive()
+returns integer language sql stable as $$ select 1 $$;
+
+revoke all on function public.keepalive() from public;
+grant execute on function public.keepalive() to anon, authenticated;
