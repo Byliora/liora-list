@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AuthGate } from "@/components/AuthGate";
 import { Shell } from "@/components/Shell";
 import { StatusPill } from "@/components/StatusPill";
+import { StatsPanel } from "@/components/StatsPanel";
 import { db } from "@/lib/supabase";
 import { STATUSES, ageText, fullName, heightText, type Person } from "@/lib/people";
 
@@ -33,6 +34,8 @@ function PeopleList() {
   const [q, setQ] = useState("");
   const [gender, setGender] = useState<"all" | "male" | "female">("all");
   const [status, setStatus] = useState<string>("active");
+  const [country, setCountry] = useState<string | null>(null);
+  const [ideas, setIdeas] = useState<{ person_a: string | null; person_b: string | null }[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -45,6 +48,8 @@ function PeopleList() {
         return;
       }
       setRows(data as Row[]);
+      const { data: i } = await db().from("ideas").select("person_a,person_b");
+      setIdeas(i ?? []);
       const paths = (data as Row[]).map((r) => r.photo_path).filter((p): p is string => !!p);
       if (paths.length) {
         const { data: signed } = await db().storage.from("photos").createSignedUrls(paths, 60 * 10);
@@ -65,9 +70,10 @@ function PeopleList() {
       if (status === "active" && CLOSED.has(r.status)) return false;
       if (status !== "active" && status !== "all" && r.status !== status) return false;
       if (needle && !fullName(r).toLowerCase().includes(needle)) return false;
+      if (country && r.country !== country) return false;
       return true;
     });
-  }, [rows, q, gender, status]);
+  }, [rows, q, gender, status, country]);
 
   return (
     <Shell
@@ -105,6 +111,8 @@ function PeopleList() {
           </select>
         </div>
       </div>
+
+      {rows && rows.length > 0 && <StatsPanel people={rows} ideas={ideas} country={country} onCountry={setCountry} />}
 
       {error && <p role="alert" className="rounded-lg bg-cream px-3 py-2 font-semibold text-wine">{error}</p>}
       {!rows && !error && <p className="text-cream-muted">Loading…</p>}
