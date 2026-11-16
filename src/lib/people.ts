@@ -88,6 +88,8 @@ export type Person = {
   looking_for: string | null;
   private_notes: string | null;
   photo_path: string | null;
+  /** All photos, main first. photo_path always mirrors the first one. */
+  photo_paths: string[] | null;
   created_at: string;
   updated_at: string;
 };

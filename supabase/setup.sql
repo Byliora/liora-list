@@ -158,3 +158,9 @@ create policy "owner only" on public.settings
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid());
 revoke all on public.settings from anon;
+
+-- ---------------------------------------------------------------
+-- Several photos per person (main first; photo_path mirrors the first)
+-- ---------------------------------------------------------------
+alter table public.people add column if not exists photo_paths text[];
+update public.people set photo_paths = array[photo_path] where photo_path is not null and photo_paths is null;

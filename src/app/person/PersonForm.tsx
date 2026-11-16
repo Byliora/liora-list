@@ -28,6 +28,8 @@ import {
 } from "@/lib/people";
 
 type Draft = Omit<Person, "id" | "created_at" | "updated_at">;
+type Photo = { path?: string; blob?: Blob; url: string };
+const MAX_PHOTOS = 6;
 
 const EMPTY: Draft = {
   first_name: "",
@@ -63,6 +65,7 @@ const EMPTY: Draft = {
   looking_for: null,
   private_notes: null,
   photo_path: null,
+  photo_paths: null,
 };
 
 
@@ -310,8 +313,9 @@ export function PersonForm() {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [loaded, setLoaded] = useState(isNew);
   const [cities, setCities] = useState<string[]>([]);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<Blob | null>(null);
+  // Photos in display order (main first). Existing ones have a path; new ones a blob waiting to upload.
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [removedPaths, setRemovedPaths] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [duplicate, setDuplicate] = useState<string | null>(null);
@@ -336,9 +340,11 @@ export function PersonForm() {
       const p = data as Person;
       setDraft(p);
       setAgeMode(p.date_of_birth ? "dob" : p.birth_year ? "year" : p.approx_age ? "approx" : "dob");
-      if (p.photo_path) {
-        const { data: s } = await db().storage.from("photos").createSignedUrl(p.photo_path, 60 * 10);
-        if (s) setPhotoUrl(s.signedUrl);
+      const paths = p.photo_paths?.length ? p.photo_paths : p.photo_path ? [p.photo_path] : [];
+      if (paths.length) {
+        const { data: signed } = await db().storage.from("photos").createSignedUrls(paths, 60 * 10);
+        const byPath = new Map((signed ?? []).map((x) => [x.path, x.signedUrl]));
+        setPhotos(paths.map((path) => ({ path, url: byPath.get(path) ?? "" })).filter((x) => x.url));
       }
       setLoaded(true);
     })();
@@ -355,16 +361,39 @@ export function PersonForm() {
   });
   const num = (v: string) => (v === "" ? null : Number(v));
 
-  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const jpeg = await prepareJpeg(file);
-      setPhotoFile(jpeg);
-      setPhotoUrl(URL.createObjectURL(jpeg));
-    } catch {
-      setMessage({ kind: "error", text: "That photo couldn't be read. Try a JPEG or PNG, or a screenshot of it." });
+  async function onPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
+      setMessage({ kind: "error", text: `Up to ${MAX_PHOTOS} photos per person. Remove one to add another.` });
+      return;
     }
+    const added: Photo[] = [];
+    for (const file of files.slice(0, room)) {
+      try {
+        const jpeg = await prepareJpeg(file);
+        added.push({ blob: jpeg, url: URL.createObjectURL(jpeg) });
+      } catch {
+        setMessage({ kind: "error", text: "One photo couldn't be read. Try a JPEG or PNG, or a screenshot of it." });
+      }
+    }
+    setPhotos((list) => [...list, ...added]);
+    if (files.length > room) setMessage({ kind: "error", text: `Only ${room} more could be added (up to ${MAX_PHOTOS} per person).` });
+    else if (added.length) setMessage({ kind: "ok", text: "Photo added. Tap Save to keep it." });
+  }
+
+  function removePhoto(i: number) {
+    const p = photos[i];
+    if (p.path) setRemovedPaths((r) => [...r, p.path!]);
+    setPhotos((list) => list.filter((_, k) => k !== i));
+    setMessage({ kind: "ok", text: "Photo removed. Tap Save to confirm." });
+  }
+
+  function makeMain(i: number) {
+    setPhotos((list) => [list[i], ...list.filter((_, k) => k !== i)]);
+    setMessage({ kind: "ok", text: "Main photo changed. Tap Save to keep it." });
   }
 
   async function save(force = false) {
@@ -408,15 +437,26 @@ export function PersonForm() {
         const { error } = await db().from("people").update(clean).eq("id", id);
         if (error) throw error;
       }
-      if (photoFile && personId) {
+      if (personId && (removedPaths.length || photos.some((p) => p.blob) || photos.map((p) => p.path).join() !== (draft.photo_paths ?? []).join())) {
         const { data: u } = await db().auth.getUser();
-        const path = `${u.user?.id}/${personId}-${Date.now()}.jpg`;
-        const { error: upErr } = await db().storage.from("photos").upload(path, photoFile, { contentType: "image/jpeg" });
-        if (upErr) throw upErr;
-        if (draft.photo_path) await db().storage.from("photos").remove([draft.photo_path]);
-        await db().from("people").update({ photo_path: path }).eq("id", personId);
-        setDraft((d) => ({ ...d, photo_path: path }));
-        setPhotoFile(null);
+        const finalPhotos: Photo[] = [];
+        for (const [i, p] of photos.entries()) {
+          if (p.path) {
+            finalPhotos.push(p);
+            continue;
+          }
+          const path = `${u.user?.id}/${personId}-${Date.now()}-${i}.jpg`;
+          const { error: upErr } = await db().storage.from("photos").upload(path, p.blob!, { contentType: "image/jpeg" });
+          if (upErr) throw upErr;
+          finalPhotos.push({ path, url: p.url });
+        }
+        const paths = finalPhotos.map((p) => p.path!);
+        const { error: phErr } = await db().from("people").update({ photo_paths: paths, photo_path: paths[0] ?? null }).eq("id", personId);
+        if (phErr) throw phErr;
+        if (removedPaths.length) await db().storage.from("photos").remove(removedPaths);
+        setRemovedPaths([]);
+        setPhotos(finalPhotos);
+        setDraft((d) => ({ ...d, photo_paths: paths, photo_path: paths[0] ?? null }));
       }
       if (isNew) {
         router.replace(`/person?id=${personId}`);
@@ -432,7 +472,8 @@ export function PersonForm() {
   async function remove() {
     if (!id) return;
     setSaving(true);
-    if (draft.photo_path) await db().storage.from("photos").remove([draft.photo_path]);
+    const allPaths = [...new Set([...(draft.photo_paths ?? []), ...(draft.photo_path ? [draft.photo_path] : []), ...removedPaths])];
+    if (allPaths.length) await db().storage.from("photos").remove(allPaths);
     const { error } = await db().from("people").delete().eq("id", id);
     setSaving(false);
     if (error) {
@@ -457,12 +498,20 @@ export function PersonForm() {
       title={isNew ? "Add a person" : fullName(draft) || "Person"}
       back={{ href: "/", label: "People" }}
     >
+      {!isNew && photos.length > 1 && (
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1" aria-label="Photos">
+          {photos.map((p, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={p.path ?? p.url} src={p.url} alt={`Photo ${i + 1} of ${photos.length}`} className="h-72 w-[78%] shrink-0 snap-center rounded-2xl object-cover" />
+          ))}
+        </div>
+      )}
       {!isNew && (
         <div className="card flex flex-col gap-3 p-4">
           <div className="flex items-center gap-3">
-            {photoUrl ? (
+            {photos[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt="" className="h-32 w-28 shrink-0 rounded-2xl object-cover" />
+              <img src={photos[0].url} alt="" className="h-32 w-28 shrink-0 rounded-2xl object-cover" />
             ) : null}
             <div className="flex flex-col items-start gap-1">
               <StatusPill status={draft.status} />
@@ -785,16 +834,40 @@ export function PersonForm() {
           </Field>
         </Section>
 
-        <Section title="Photo">
-          {photoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt="" className="max-h-80 w-full rounded-xl object-cover" />
+        <Section title={`Photos${photos.length ? ` (${photos.length})` : ""}`}>
+          {photos.length > 0 && (
+            <ul className="grid grid-cols-2 gap-3">
+              {photos.map((p, i) => (
+                <li key={p.path ?? p.url} className="flex flex-col gap-2">
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt={`Photo ${i + 1}`} className="aspect-[4/5] w-full rounded-xl object-cover" />
+                    {i === 0 && <span className="absolute left-2 top-2 rounded-full bg-cream px-2.5 py-0.5 text-xs font-bold text-wine">Main</span>}
+                    {p.blob && <span className="absolute right-2 top-2 rounded-full bg-wine px-2.5 py-0.5 text-xs font-bold text-cream">Not saved yet</span>}
+                  </div>
+                  <div className="flex gap-2">
+                    {i > 0 && (
+                      <button type="button" onClick={() => makeMain(i)} className="min-h-10 flex-1 rounded-lg border border-wine-line text-sm font-semibold">
+                        Make main
+                      </button>
+                    )}
+                    <button type="button" onClick={() => removePhoto(i)} className="min-h-10 flex-1 rounded-lg border border-wine-line text-sm font-semibold text-cream-muted">
+                      Remove
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
-          <label className="btn-ghost flex cursor-pointer items-center justify-center">
-            {photoUrl ? "Replace photo" : "Add photo"}
-            <input id="photo" type="file" accept="image/*" className="sr-only" onChange={onPhoto} />
-          </label>
-          <span className="text-sm text-cream-muted">Photos are shrunk and their location data removed before upload.</span>
+          {photos.length < MAX_PHOTOS && (
+            <label className="btn-ghost flex cursor-pointer items-center justify-center">
+              {photos.length ? "Add more photos" : "Add photos"}
+              <input id="photo" type="file" accept="image/*" multiple className="sr-only" onChange={onPhotos} />
+            </label>
+          )}
+          <span className="text-sm text-cream-muted">
+            Up to {MAX_PHOTOS}. The main photo shows on cards and matches. Photos are shrunk and their location data removed before upload.
+          </span>
         </Section>
 
         <Section title="Private notes">
