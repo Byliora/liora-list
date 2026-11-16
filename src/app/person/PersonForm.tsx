@@ -8,7 +8,10 @@ import { StatusPill } from "@/components/StatusPill";
 import { db } from "@/lib/supabase";
 import { prepareJpeg } from "@/lib/photo";
 import {
+  COMMUNITIES,
+  KOSHER_LABELS,
   RELIGIOUS_LABELS,
+  communityText,
   STATUSES,
   ageText,
   cmToFtIn,
@@ -32,6 +35,8 @@ const EMPTY: Draft = {
   area: null,
   height_cm: null,
   religious_level: null,
+  kosher_level: null,
+  community: null,
   status: "Available",
   phone: null,
   email: null,
@@ -82,6 +87,65 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {children}
       {hint && <span className="text-sm text-cream-muted">{hint}</span>}
     </label>
+  );
+}
+
+function LevelSlider({
+  id,
+  label,
+  labels,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  labels: Record<number, string>;
+  value: number | null;
+  onChange: (v: number | null) => void;
+}) {
+  const steps = Object.keys(labels).map(Number);
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm text-cream-muted">{label}</span>
+        <span className="text-right font-bold">{value ? labels[value] : "Not set"}</span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={steps[0]}
+        max={steps[steps.length - 1]}
+        step={1}
+        value={value ?? Math.ceil(steps.length / 2)}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className={`liora-range ${value ? "" : "unset"}`}
+        aria-label={label}
+        aria-valuetext={value ? labels[value] : "Not set"}
+      />
+      {/* Labels sit exactly under each stop; the 17px matches half the 34px handle. */}
+      <div className="relative h-14 text-xs leading-tight text-cream-muted" aria-hidden="true">
+        {steps.map((n, i) => {
+          const frac = i / (steps.length - 1);
+          const edge = i === 0 ? "left-0 text-left" : i === steps.length - 1 ? "right-0 text-right" : "-translate-x-1/2 text-center";
+          return (
+            <span
+              key={n}
+              className={`absolute top-0 w-[24%] ${edge} ${value === n ? "font-bold text-cream" : ""}`}
+              style={i === 0 || i === steps.length - 1 ? undefined : { left: `calc(17px + ${frac} * (100% - 34px))` }}
+            >
+              {labels[n]}
+            </span>
+          );
+        })}
+      </div>
+      {value ? (
+        <button type="button" className="self-start text-sm text-cream-muted underline underline-offset-4" onClick={() => onChange(null)}>
+          Clear (not set)
+        </button>
+      ) : (
+        <span className="text-sm text-cream-muted">Not set yet. Drag the handle to choose.</span>
+      )}
+    </div>
   );
 }
 
@@ -238,7 +302,6 @@ export function PersonForm() {
   }
 
   const ft = draft.height_cm ? cmToFtIn(draft.height_cm) : null;
-  const rel = draft.religious_level;
 
   if (!loaded) {
     return (
@@ -267,6 +330,11 @@ export function PersonForm() {
             <div className="flex flex-col items-start gap-1">
               <StatusPill status={draft.status} />
               <span className="text-cream-muted">{[ageText(draft) && `Age ${ageText(draft)}`, draft.city].filter(Boolean).join(" · ")}</span>
+              {(draft.religious_level || draft.kosher_level || draft.community?.length) ? (
+                <span className="text-sm text-cream-muted">
+                  {[draft.religious_level && RELIGIOUS_LABELS[draft.religious_level], draft.kosher_level && KOSHER_LABELS[draft.kosher_level], communityText(draft.community)].filter(Boolean).join(" · ")}
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="flex flex-col gap-1">
@@ -421,34 +489,50 @@ export function PersonForm() {
             <input id="area" className="field" {...text("area")} />
           </Field>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm text-cream-muted">Religious level</span>
-              <span className="font-bold">{rel ? `${rel} · ${RELIGIOUS_LABELS[rel]}` : "Not set"}</span>
+          <LevelSlider
+            id="religious_level"
+            label="Religious level"
+            labels={RELIGIOUS_LABELS}
+            value={draft.religious_level}
+            onChange={(v) => set("religious_level", v)}
+          />
+          <LevelSlider
+            id="kosher_level"
+            label="Kosher"
+            labels={KOSHER_LABELS}
+            value={draft.kosher_level}
+            onChange={(v) => set("kosher_level", v)}
+          />
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm text-cream-muted">Type (tick all that apply)</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {COMMUNITIES.map((c) => {
+                const on = draft.community?.includes(c.key) ?? false;
+                return (
+                  <label
+                    key={c.key}
+                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border-2 px-3 font-semibold ${on ? "border-cream bg-cream text-wine" : "border-wine-line"}`}
+                  >
+                    <input
+                      id={`community-${c.key}`}
+                      type="checkbox"
+                      className="h-5 w-5 accent-wine"
+                      checked={on}
+                      onChange={(e) => {
+                        const cur = new Set(draft.community ?? []);
+                        if (e.target.checked) cur.add(c.key);
+                        else cur.delete(c.key);
+                        const next = COMMUNITIES.map((x) => x.key).filter((k) => cur.has(k));
+                        set("community", next.length ? next : null);
+                      }}
+                    />
+                    {c.label}
+                  </label>
+                );
+              })}
             </div>
-            <input
-              id="religious_level"
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={rel ?? 5}
-              onChange={(e) => set("religious_level", Number(e.target.value))}
-              className={`liora-range ${rel ? "" : "unset"}`}
-              aria-label="Religious level, 1 Modern Orthodox to 10 Chareidi"
-            />
-            <div className="flex justify-between text-xs text-cream-muted">
-              <span>Modern</span>
-              <span>Centrist</span>
-              <span>Yeshivish</span>
-              <span>Chareidi</span>
-            </div>
-            {rel && (
-              <button type="button" className="self-start text-sm text-cream-muted underline underline-offset-4" onClick={() => set("religious_level", null)}>
-                Clear (not set)
-              </button>
-            )}
-          </div>
+          </fieldset>
         </Section>
 
         <Section title="Main contact" open={isNew}>

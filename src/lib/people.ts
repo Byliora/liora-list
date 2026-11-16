@@ -23,17 +23,35 @@ export const STATUS_STYLE: Record<Status, { bg: string; fg: string }> = {
 };
 
 export const RELIGIOUS_LABELS: Record<number, string> = {
-  1: "Modern Orthodox",
-  2: "Modern Orthodox",
-  3: "Modern Orthodox",
-  4: "Centrist",
-  5: "Centrist",
-  6: "Yeshivish",
-  7: "Yeshivish",
-  8: "Yeshivish",
-  9: "Chareidi",
-  10: "Chareidi",
+  1: "Not religious",
+  2: "Traditional",
+  3: "Shomer Shabbat",
+  4: "Fully religious",
 };
+
+export const KOSHER_LABELS: Record<number, string> = {
+  1: "Not kosher",
+  2: "Kosher in the home",
+  3: "Kosher (eats vegetarian out)",
+  4: "Chalav Yisrael",
+};
+
+/** Stored as the key; shown as the label. */
+export const COMMUNITIES = [
+  { key: "sephardi", label: "Sephardi" },
+  { key: "ashkenazi", label: "Ashkenazi" },
+  { key: "mizrachi", label: "Mizrachi" },
+  { key: "yemeni", label: "Yemeni" },
+  { key: "gruzini", label: "Gruzini" },
+  { key: "chareidi", label: "Chareidi" },
+  { key: "chabad", label: "Chabad" },
+  { key: "other", label: "Other" },
+] as const;
+
+export function communityText(keys: string[] | null): string {
+  if (!keys?.length) return "";
+  return COMMUNITIES.filter((c) => keys.includes(c.key)).map((c) => c.label).join(", ");
+}
 
 export type Person = {
   id: string;
@@ -48,6 +66,8 @@ export type Person = {
   area: string | null;
   height_cm: number | null;
   religious_level: number | null;
+  kosher_level: number | null;
+  community: string[] | null;
   status: Status;
   phone: string | null;
   email: string | null;

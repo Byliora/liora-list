@@ -18,7 +18,9 @@ create table if not exists public.people (
   city             text,
   area             text,
   height_cm        smallint check (height_cm between 100 and 230),
-  religious_level  smallint check (religious_level between 1 and 10),
+  religious_level  smallint,
+  kosher_level     smallint,
+  community        text[],
   status           text not null default 'Available'
                    check (status in ('Available','Redt','Researching','Dating','On hold','Engaged','Married','Withdrawn')),
   phone            text,
@@ -36,6 +38,20 @@ create table if not exists public.people (
 );
 
 create index if not exists people_owner_idx on public.people (owner_id);
+
+-- Religious level (1 Not religious … 4 Fully religious), kosher level (1 … 4)
+-- and community "type" tick boxes. Written so re-running upgrades an older copy.
+alter table public.people add column if not exists kosher_level smallint;
+alter table public.people add column if not exists community text[];
+alter table public.people drop constraint if exists people_religious_level_check;
+update public.people set religious_level = 4 where religious_level > 4;
+alter table public.people add constraint people_religious_level_check check (religious_level between 1 and 4);
+alter table public.people drop constraint if exists people_kosher_level_check;
+alter table public.people add constraint people_kosher_level_check check (kosher_level between 1 and 4);
+alter table public.people drop constraint if exists people_community_check;
+alter table public.people add constraint people_community_check check (
+  community <@ array['sephardi','ashkenazi','mizrachi','yemeni','gruzini','chareidi','chabad','other']::text[]
+);
 
 -- ---------------------------------------------------------------
 -- Ideas ("maybe X for Y")
