@@ -1,6 +1,6 @@
-// Quick checks: node --experimental-strip-types src/lib/people.test.mjs
+// Quick checks: npm test
 import assert from "node:assert/strict";
-import { cleanInstagram, instagramUrl, linkedinUrl, ageOf, cmToFtIn, ftInToCm, heightText, phoneDigits, toCsv } from "./people.ts";
+import { cleanInstagram, instagramUrl, linkedinUrl, ageOf, cmToFtIn, ftInToCm, heightText, phoneDigits, toCsv } from "./people";
 
 const today = new Date("2026-11-16T12:00:00");
 assert.deepEqual(ageOf({ date_of_birth: "1999-11-17", birth_year: null, approx_age: null }, today), { age: 26, approx: false });

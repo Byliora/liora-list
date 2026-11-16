@@ -45,6 +45,14 @@ alter table public.people add column if not exists kosher_level smallint;
 alter table public.people add column if not exists community text[];
 alter table public.people add column if not exists instagram text;
 alter table public.people add column if not exists linkedin text;
+-- What they're looking for (used for Possible matches)
+alter table public.people add column if not exists pref_age_min smallint;
+alter table public.people add column if not exists pref_age_max smallint;
+alter table public.people add column if not exists pref_religious smallint[];
+alter table public.people add column if not exists pref_kosher smallint[];
+alter table public.people add column if not exists pref_community text[];
+alter table public.people add column if not exists pref_countries text[];
+alter table public.people add column if not exists pref_anywhere boolean not null default false;
 alter table public.people drop constraint if exists people_religious_level_check;
 update public.people set religious_level = 4 where religious_level > 4;
 alter table public.people add constraint people_religious_level_check check (religious_level between 1 and 4);

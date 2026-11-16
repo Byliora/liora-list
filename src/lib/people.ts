@@ -73,6 +73,13 @@ export type Person = {
   email: string | null;
   instagram: string | null;
   linkedin: string | null;
+  pref_age_min: number | null;
+  pref_age_max: number | null;
+  pref_religious: number[] | null;
+  pref_kosher: number[] | null;
+  pref_community: string[] | null;
+  pref_countries: string[] | null;
+  pref_anywhere: boolean;
   contact_who: "single" | "mother" | "father" | "other" | null;
   contact_name: string | null;
   contact_phone: string | null;
@@ -84,6 +91,24 @@ export type Person = {
   created_at: string;
   updated_at: string;
 };
+
+export const COUNTRIES = [
+  "United Kingdom",
+  "Israel",
+  "United States",
+  "Canada",
+  "Belgium",
+  "France",
+  "Netherlands",
+  "Switzerland",
+  "Germany",
+  "Austria",
+  "South Africa",
+  "Australia",
+  "Argentina",
+  "Mexico",
+  "Other",
+];
 
 export type Idea = {
   id: string;

@@ -7,8 +7,10 @@ import { Shell } from "@/components/Shell";
 import { StatusPill } from "@/components/StatusPill";
 import { db } from "@/lib/supabase";
 import { prepareJpeg } from "@/lib/photo";
+import { PossibleMatches } from "./PossibleMatches";
 import {
   COMMUNITIES,
+  COUNTRIES,
   KOSHER_LABELS,
   RELIGIOUS_LABELS,
   communityText,
@@ -45,6 +47,13 @@ const EMPTY: Draft = {
   email: null,
   instagram: null,
   linkedin: null,
+  pref_age_min: null,
+  pref_age_max: null,
+  pref_religious: null,
+  pref_kosher: null,
+  pref_community: null,
+  pref_countries: null,
+  pref_anywhere: false,
   contact_who: null,
   contact_name: null,
   contact_phone: null,
@@ -55,23 +64,6 @@ const EMPTY: Draft = {
   photo_path: null,
 };
 
-const COUNTRIES = [
-  "United Kingdom",
-  "Israel",
-  "United States",
-  "Canada",
-  "Belgium",
-  "France",
-  "Netherlands",
-  "Switzerland",
-  "Germany",
-  "Austria",
-  "South Africa",
-  "Australia",
-  "Argentina",
-  "Mexico",
-  "Other",
-];
 
 function Section({ title, open, children }: { title: string; open?: boolean; children: ReactNode }) {
   return (
@@ -151,6 +143,49 @@ function LevelSlider({
         <span className="text-sm text-cream-muted">Not set yet. Drag the handle to choose.</span>
       )}
     </div>
+  );
+}
+
+function ChipPicker<T extends string | number>({
+  legend,
+  hint,
+  options,
+  value,
+  onChange,
+}: {
+  legend: string;
+  hint?: string;
+  options: { value: T; label: string }[];
+  value: T[] | null;
+  onChange: (v: T[] | null) => void;
+}) {
+  const chosen = value ?? [];
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-1 text-sm text-cream-muted">{legend}</legend>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => {
+          const on = chosen.includes(o.value);
+          return (
+            <button
+              key={String(o.value)}
+              type="button"
+              aria-pressed={on}
+              onClick={() => {
+                const next = on ? chosen.filter((x) => x !== o.value) : [...chosen, o.value];
+                const ordered = options.map((x) => x.value).filter((v) => next.includes(v));
+                onChange(ordered.length ? ordered : null);
+              }}
+              className={`min-h-11 rounded-full border-2 px-4 text-sm font-semibold ${on ? "border-cream bg-cream text-wine" : "border-wine-line"}`}
+            >
+              {on ? "✓ " : ""}
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <span className="text-sm text-cream-muted">{hint ?? (chosen.length ? "" : "Nothing ticked = no preference.")}</span>
+    </fieldset>
   );
 }
 
@@ -364,7 +399,7 @@ export function PersonForm() {
               ) : null}
             </div>
           </div>
-          <div className="flex flex-col gap-1">
+          {(draft.contact_who || draft.contact_phone || draft.phone || draft.contact_email || draft.email) && (<div className="flex flex-col gap-1">
             <span className="text-sm text-cream-muted">
               Main contact
               {draft.contact_who
@@ -372,10 +407,12 @@ export function PersonForm() {
                 : ""}
             </span>
             <ContactButtons phone={draft.contact_phone || draft.phone} email={draft.contact_email || draft.email} />
-          </div>
+          </div>)}
           <SocialButtons instagram={draft.instagram} linkedin={draft.linkedin} />
         </div>
       )}
+
+      {!isNew && id && <PossibleMatches me={{ ...draft, id }} />}
 
       <form
         className="flex flex-col gap-3"
@@ -604,11 +641,62 @@ export function PersonForm() {
           </Field>
         </Section>
 
-        <Section title="About and looking for">
+        <Section title="About">
           <Field label="Short description">
             <textarea id="description" rows={4} className="field" {...text("description")} />
           </Field>
-          <Field label="What they're looking for">
+        </Section>
+
+        <Section title="Looking for">
+          <p className="text-sm text-cream-muted">
+            Tick what they&apos;d be happy with. These choices drive the Possible matches list below.
+          </p>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm text-cream-muted">Age range</legend>
+            <div className="flex items-center gap-3">
+              <input id="pref_age_min" type="number" inputMode="numeric" placeholder="From" className="field" aria-label="Youngest age" value={draft.pref_age_min ?? ""} onChange={(e) => set("pref_age_min", num(e.target.value))} />
+              <span className="text-cream-muted">to</span>
+              <input id="pref_age_max" type="number" inputMode="numeric" placeholder="To" className="field" aria-label="Oldest age" value={draft.pref_age_max ?? ""} onChange={(e) => set("pref_age_max", num(e.target.value))} />
+            </div>
+          </fieldset>
+          <ChipPicker
+            legend="Religious level"
+            options={Object.entries(RELIGIOUS_LABELS).map(([v, l]) => ({ value: Number(v), label: l }))}
+            value={draft.pref_religious}
+            onChange={(v) => set("pref_religious", v)}
+          />
+          <ChipPicker
+            legend="Kosher"
+            options={Object.entries(KOSHER_LABELS).map(([v, l]) => ({ value: Number(v), label: l }))}
+            value={draft.pref_kosher}
+            onChange={(v) => set("pref_kosher", v)}
+          />
+          <ChipPicker
+            legend="Type"
+            options={COMMUNITIES.map((c) => ({ value: c.key as string, label: c.label }))}
+            value={draft.pref_community}
+            onChange={(v) => set("pref_community", v)}
+          />
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm text-cream-muted">Location</legend>
+            <button
+              type="button"
+              aria-pressed={draft.pref_anywhere}
+              onClick={() => set("pref_anywhere", !draft.pref_anywhere)}
+              className={`min-h-12 rounded-xl border-2 px-4 text-left font-semibold ${draft.pref_anywhere ? "border-cream bg-cream text-wine" : "border-wine-line"}`}
+            >
+              {draft.pref_anywhere ? "✓ " : ""}Open to anywhere
+            </button>
+            {!draft.pref_anywhere && (
+              <ChipPicker
+                legend="Or only these countries"
+                options={COUNTRIES.filter((c) => c !== "Other").map((c) => ({ value: c, label: c }))}
+                value={draft.pref_countries}
+                onChange={(v) => set("pref_countries", v)}
+              />
+            )}
+          </fieldset>
+          <Field label="Anything else they're looking for" hint="Must-haves, dealbreakers, personality. Not used for matching.">
             <textarea id="looking_for" rows={4} className="field" {...text("looking_for")} />
           </Field>
         </Section>
