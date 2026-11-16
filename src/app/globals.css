@@ -53,6 +53,22 @@ body {
     padding: 10px 14px;
     font-size: 16px; /* 16px stops iPhone zooming into fields */
   }
+  /* iPhone Safari draws date inputs wider than their box unless told not to. */
+  .field {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .field[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+  }
+  .field[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
   .field::placeholder { color: color-mix(in srgb, var(--cream-muted) 70%, transparent); }
   .field:focus-visible, .btn-primary:focus-visible, .btn-ghost:focus-visible {
     outline: 3px solid var(--blush);
