@@ -146,6 +146,75 @@ function LevelSlider({
   );
 }
 
+const AGE_FLOOR = 18;
+const AGE_CEIL = 60;
+
+/** Two-handle age slider. Untouched = no age preference. */
+function AgeRange({
+  min,
+  max,
+  onChange,
+}: {
+  min: number | null;
+  max: number | null;
+  onChange: (lo: number | null, hi: number | null) => void;
+}) {
+  const set = min != null || max != null;
+  const lo = min ?? AGE_FLOOR;
+  const hi = max ?? AGE_CEIL;
+  const pct = (v: number) => ((v - AGE_FLOOR) / (AGE_CEIL - AGE_FLOOR)) * 100;
+  const shown = set ? `${lo} – ${hi}${hi >= AGE_CEIL ? "+" : ""}` : "No preference";
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm text-cream-muted">Age range</span>
+        <span className="font-bold tabular-nums">{shown}</span>
+      </div>
+      <div className={`dual-range ${set ? "" : "unset"}`}>
+        <div className="dual-range-track" />
+        <div className="dual-range-fill" style={{ left: `calc(17px + ${pct(lo) / 100} * (100% - 34px))`, right: `calc(17px + ${1 - pct(hi) / 100} * (100% - 34px))` }} />
+        <input
+          id="pref_age_min"
+          type="range"
+          min={AGE_FLOOR}
+          max={AGE_CEIL}
+          step={1}
+          value={lo}
+          aria-label="Youngest age"
+          aria-valuetext={`${lo}`}
+          onChange={(e) => onChange(Math.min(Number(e.target.value), hi), max ?? hi)}
+          style={{ zIndex: lo > AGE_CEIL - 5 ? 4 : 3 }}
+        />
+        <input
+          id="pref_age_max"
+          type="range"
+          min={AGE_FLOOR}
+          max={AGE_CEIL}
+          step={1}
+          value={hi}
+          aria-label="Oldest age"
+          aria-valuetext={`${hi}`}
+          onChange={(e) => onChange(min ?? lo, Math.max(Number(e.target.value), lo))}
+        />
+      </div>
+      <div className="flex justify-between text-xs text-cream-muted">
+        <span>{AGE_FLOOR}</span>
+        <span>30</span>
+        <span>40</span>
+        <span>50</span>
+        <span>{AGE_CEIL}+</span>
+      </div>
+      {set ? (
+        <button type="button" className="self-start text-sm text-cream-muted underline underline-offset-4" onClick={() => onChange(null, null)}>
+          Clear (no preference)
+        </button>
+      ) : (
+        <span className="text-sm text-cream-muted">Drag either handle to set a range.</span>
+      )}
+    </div>
+  );
+}
+
 function ChipPicker<T extends string | number>({
   legend,
   hint,
@@ -651,14 +720,15 @@ export function PersonForm() {
           <p className="text-sm text-cream-muted">
             Tick what they&apos;d be happy with. These choices drive the Possible matches list below.
           </p>
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm text-cream-muted">Age range</legend>
-            <div className="flex items-center gap-3">
-              <input id="pref_age_min" type="number" inputMode="numeric" placeholder="From" className="field" aria-label="Youngest age" value={draft.pref_age_min ?? ""} onChange={(e) => set("pref_age_min", num(e.target.value))} />
-              <span className="text-cream-muted">to</span>
-              <input id="pref_age_max" type="number" inputMode="numeric" placeholder="To" className="field" aria-label="Oldest age" value={draft.pref_age_max ?? ""} onChange={(e) => set("pref_age_max", num(e.target.value))} />
-            </div>
-          </fieldset>
+          <AgeRange
+            min={draft.pref_age_min}
+            max={draft.pref_age_max}
+            onChange={(lo, hi) => {
+              // Either end of the slider means "no limit on that side".
+              set("pref_age_min", lo == null || lo <= AGE_FLOOR ? null : lo);
+              set("pref_age_max", hi == null || hi >= AGE_CEIL ? null : hi);
+            }}
+          />
           <ChipPicker
             legend="Religious level"
             options={Object.entries(RELIGIOUS_LABELS).map(([v, l]) => ({ value: Number(v), label: l }))}
