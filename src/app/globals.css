@@ -39,3 +39,85 @@ body {
   font-size: 16px;
   line-height: 1.5;
 }
+
+/* Shared form controls: large tap targets for thumbs */
+@layer components {
+  .field {
+    min-height: 48px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--wine-line);
+    background: var(--wine-card);
+    color: var(--cream);
+    padding: 10px 14px;
+    font-size: 16px; /* 16px stops iPhone zooming into fields */
+  }
+  .field::placeholder { color: color-mix(in srgb, var(--cream-muted) 70%, transparent); }
+  .field:focus-visible, .btn-primary:focus-visible, .btn-ghost:focus-visible {
+    outline: 3px solid var(--blush);
+    outline-offset: 2px;
+  }
+  .btn-primary {
+    min-height: 52px;
+    border-radius: 12px;
+    background: var(--cream);
+    color: var(--wine);
+    font-weight: 700;
+    padding: 0 18px;
+  }
+  .btn-primary:disabled { opacity: 0.6; }
+  .btn-ghost {
+    min-height: 48px;
+    border-radius: 12px;
+    border: 2px solid var(--blush);
+    color: var(--cream);
+    font-weight: 700;
+    padding: 0 16px;
+  }
+  .card {
+    border-radius: 14px;
+    border: 1px solid var(--wine-line);
+    background: var(--wine-card);
+  }
+  .grad-track {
+    background: linear-gradient(90deg, var(--grad-start), var(--grad-end));
+  }
+}
+
+/* Religious level slider: big thumb, gradient track; dimmed when "not set" */
+.liora-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+}
+.liora-range::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--grad-start), var(--grad-end));
+}
+.liora-range::-moz-range-track {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--grad-start), var(--grad-end));
+}
+.liora-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 34px;
+  height: 34px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: var(--wine);
+  border: 4px solid var(--cream);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.liora-range::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--wine);
+  border: 4px solid var(--cream);
+}
+.liora-range.unset { opacity: 0.45; }
+.liora-range:focus-visible { outline: 3px solid var(--blush); outline-offset: 4px; border-radius: 8px; }

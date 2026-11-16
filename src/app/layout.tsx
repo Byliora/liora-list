@@ -10,10 +10,12 @@ export const metadata: Metadata = {
   title: "The Liora List",
   description: "Private workspace for Liora.",
   robots: { index: false, follow: false },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Liora List", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#7b0323",
+  themeColor: "#5e021a",
   viewportFit: "cover",
 };
 
