@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useMemo } from "react";
 import type { Status } from "@/lib/people";
 
@@ -46,23 +47,37 @@ export function StatsPanel({
     };
   }, [people, ideas]);
 
-  const tiles = [
+  const tiles: { n: number; label: string; sub: string; href?: string }[] = [
     { n: stats.total, label: "On the list", sub: `${stats.active} active` },
     { n: stats.dating, label: "Dating now", sub: stats.dating === 1 ? "1 person" : `${stats.dating} people` },
-    { n: stats.couples, label: "Couples", sub: "engaged or married" },
+    { n: stats.couples, label: "Couples", sub: "engaged or married", href: "/mazal-tov" },
   ];
   const chips = Object.entries(stats.counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
   return (
     <section className="flex flex-col gap-3" aria-label="Your list at a glance">
       <div className="grid grid-cols-3 gap-2">
-        {tiles.map((t) => (
-          <div key={t.label} className="card flex min-w-0 flex-col items-start gap-0.5 px-3 py-3">
-            <span className="font-display text-4xl font-semibold leading-none text-blush">{t.n}</span>
-            <span className="text-sm font-bold leading-tight">{t.label}</span>
-            <span className="text-xs leading-tight text-cream-muted">{t.sub}</span>
-          </div>
-        ))}
+        {tiles.map((t) => {
+          const body = (
+            <>
+              <span className="font-display text-4xl font-semibold leading-none text-blush">{t.n}</span>
+              <span className="text-sm font-bold leading-tight">{t.label}</span>
+              <span className="text-xs leading-tight text-cream-muted">
+                {t.sub}
+                {t.href ? " ›" : ""}
+              </span>
+            </>
+          );
+          return t.href ? (
+            <Link key={t.label} href={t.href} className="card flex min-w-0 flex-col items-start gap-0.5 px-3 py-3 active:opacity-80">
+              {body}
+            </Link>
+          ) : (
+            <div key={t.label} className="card flex min-w-0 flex-col items-start gap-0.5 px-3 py-3">
+              {body}
+            </div>
+          );
+        })}
       </div>
 
       <details open className="card group">

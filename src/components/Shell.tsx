@@ -43,7 +43,12 @@ export function Shell({
       <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-wine-line bg-wine-band pb-[max(8px,env(safe-area-inset-bottom))]">
         <div className="mx-auto grid max-w-2xl grid-cols-3">
           {NAV.map((n) => {
-            const on = n.href === "/" ? path === "/" || path.startsWith("/person") : path.startsWith(n.href);
+            const on =
+              n.href === "/"
+                ? path === "/" || path.startsWith("/person")
+                : n.href === "/more"
+                  ? path.startsWith("/more") || path.startsWith("/mazal-tov")
+                  : path.startsWith(n.href);
             return (
               <Link
                 key={n.href}

@@ -134,3 +134,27 @@ returns integer language sql stable as $$ select 1 $$;
 
 revoke all on function public.keepalive() from public;
 grant execute on function public.keepalive() to anon, authenticated;
+
+-- ---------------------------------------------------------------
+-- Mazal tov wall dates (on the idea that brought the couple together)
+-- ---------------------------------------------------------------
+alter table public.ideas add column if not exists engaged_on date;
+alter table public.ideas add column if not exists wedding_on date;
+
+-- ---------------------------------------------------------------
+-- Settings: one row per account
+-- ---------------------------------------------------------------
+create table if not exists public.settings (
+  owner_id         uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  people_view      text not null default 'cards' check (people_view in ('cards','list')),
+  hide_on_hold     boolean not null default true,
+  default_country  text,
+  updated_at       timestamptz not null default now()
+);
+alter table public.settings enable row level security;
+drop policy if exists "owner only" on public.settings;
+create policy "owner only" on public.settings
+  for all to authenticated
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+revoke all on public.settings from anon;

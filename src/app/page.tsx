@@ -6,6 +6,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { Shell } from "@/components/Shell";
 import { StatusPill } from "@/components/StatusPill";
 import { StatsPanel } from "@/components/StatsPanel";
+import { useSettings } from "@/lib/settings";
 import { db } from "@/lib/supabase";
 import { STATUSES, ageText, fullName, heightText, type Person } from "@/lib/people";
 
@@ -35,19 +36,12 @@ function PeopleList() {
   const [gender, setGender] = useState<"all" | "male" | "female">("all");
   const [status, setStatus] = useState<string>("active");
   const [country, setCountry] = useState<string | null>(null);
-  // Remembered on this phone only. This component only ever renders in the browser (behind the login).
-  const [view, setView] = useState<"cards" | "list">(() => {
-    try {
-      return localStorage.getItem("people-view") === "list" ? "list" : "cards";
-    } catch {
-      return "cards";
-    }
-  });
+  const { settings, save: saveSettings } = useSettings();
+  const [viewChoice, setViewChoice] = useState<"cards" | "list" | null>(null);
+  const view = viewChoice ?? settings.people_view;
   function chooseView(v: "cards" | "list") {
-    setView(v);
-    try {
-      localStorage.setItem("people-view", v);
-    } catch {}
+    setViewChoice(v);
+    saveSettings({ people_view: v });
   }
   const [ideas, setIdeas] = useState<{ person_a: string | null; person_b: string | null }[]>([]);
 

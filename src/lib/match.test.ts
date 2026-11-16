@@ -27,4 +27,7 @@ assert.equal(m[1].fits, 0);
 // approximate age gets a year's grace: 33 (approx) vs max 32 is still ok
 assert.equal(findMatches(sarah, [P({ id: "a", gender: "male", approx_age: 33 })], today).length, 1);
 assert.equal(findMatches(sarah, [P({ id: "a", gender: "male", date_of_birth: "1992-01-01" })], today).length, 0); // exactly 34
+const onHold = P({ id: "h", gender: "male", status: "On hold", approx_age: 28 });
+assert.equal(findMatches(sarah, [onHold], today).length, 1);
+assert.equal(findMatches(sarah, [onHold], today, { excludeOnHold: true }).length, 0);
 console.log("match checks passed");

@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { db } from "@/lib/supabase";
 import { prepareJpeg } from "@/lib/photo";
 import { PossibleMatches } from "./PossibleMatches";
+import { useSettings } from "@/lib/settings";
 import {
   COMMUNITIES,
   COUNTRIES,
@@ -316,6 +317,10 @@ export function PersonForm() {
   const [duplicate, setDuplicate] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [ageMode, setAgeMode] = useState<"dob" | "year" | "approx">("dob");
+  const { settings } = useSettings();
+  const [touchedCountry, setTouchedCountry] = useState(false);
+  // New people start with her default country (until she picks another).
+  const country = isNew && draft.country === null && !touchedCountry ? settings.default_country : draft.country;
 
   useEffect(() => {
     (async () => {
@@ -386,6 +391,7 @@ export function PersonForm() {
       }
       const clean: Draft = {
         ...draft,
+        country,
         first_name: draft.first_name.trim(),
         surname: draft.surname.trim(),
         city: draft.city?.trim() || null,
@@ -604,7 +610,15 @@ export function PersonForm() {
           </fieldset>
 
           <Field label="Country">
-            <select id="country" className="field" {...text("country")}>
+            <select
+              id="country"
+              className="field"
+              value={country ?? ""}
+              onChange={(e) => {
+                setTouchedCountry(true);
+                set("country", e.target.value || null);
+              }}
+            >
               <option value="">Not set</option>
               {COUNTRIES.map((c) => (
                 <option key={c}>{c}</option>

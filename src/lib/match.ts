@@ -76,10 +76,16 @@ export type Match = { person: MatchFields; result: Record<CriterionKey, Verdict>
  * Missing information never rules someone out; it shows as unknown.
  * Sorted by most confirmed fits, then fewest unknowns.
  */
-export function findMatches(me: MatchFields, everyone: MatchFields[], today = new Date()): Match[] {
+export function findMatches(
+  me: MatchFields,
+  everyone: MatchFields[],
+  today = new Date(),
+  opts: { excludeOnHold?: boolean } = {},
+): Match[] {
   const out: Match[] = [];
   for (const them of everyone) {
     if (them.id === me.id || them.gender === me.gender || NOT_AVAILABLE.has(them.status)) continue;
+    if (opts.excludeOnHold && them.status === "On hold") continue;
     const result = {} as Record<CriterionKey, Verdict>;
     let fits = 0;
     let unknowns = 0;

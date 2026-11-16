@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/supabase";
 import { CRITERIA, findMatches, type MatchFields } from "@/lib/match";
 import { ageText, fullName, type Person } from "@/lib/people";
+import { useSettings } from "@/lib/settings";
 
 type Candidate = MatchFields & Pick<Person, "first_name" | "surname" | "city" | "photo_path">;
 
@@ -16,6 +17,7 @@ export function PossibleMatches({ me }: { me: MatchFields }) {
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [paired, setPaired] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState<string | null>(null);
+  const { settings } = useSettings();
 
   useEffect(() => {
     (async () => {
@@ -44,7 +46,10 @@ export function PossibleMatches({ me }: { me: MatchFields }) {
     })();
   }, [me.id, me.gender]);
 
-  const matches = useMemo(() => (others ? findMatches(me, others) : []), [me, others]);
+  const matches = useMemo(
+    () => (others ? findMatches(me, others, new Date(), { excludeOnHold: settings.hide_on_hold }) : []),
+    [me, others, settings.hide_on_hold],
+  );
   const hasPrefs = !!(
     me.pref_age_min ||
     me.pref_age_max ||
