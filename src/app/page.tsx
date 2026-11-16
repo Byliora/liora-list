@@ -35,6 +35,20 @@ function PeopleList() {
   const [gender, setGender] = useState<"all" | "male" | "female">("all");
   const [status, setStatus] = useState<string>("active");
   const [country, setCountry] = useState<string | null>(null);
+  // Remembered on this phone only. This component only ever renders in the browser (behind the login).
+  const [view, setView] = useState<"cards" | "list">(() => {
+    try {
+      return localStorage.getItem("people-view") === "list" ? "list" : "cards";
+    } catch {
+      return "cards";
+    }
+  });
+  function chooseView(v: "cards" | "list") {
+    setView(v);
+    try {
+      localStorage.setItem("people-view", v);
+    } catch {}
+  }
   const [ideas, setIdeas] = useState<{ person_a: string | null; person_b: string | null }[]>([]);
 
   useEffect(() => {
@@ -123,39 +137,90 @@ function PeopleList() {
           <Link href="/person?new=1" className="btn-primary flex items-center justify-center">Add a person</Link>
         </div>
       )}
+      {rows && rows.length > 0 && (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-cream-muted">
+            {shown.length} {shown.length === 1 ? "person" : "people"}
+          </p>
+          <div className="flex rounded-xl border border-wine-line p-1" role="group" aria-label="Layout">
+            {(["cards", "list"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => chooseView(v)}
+                aria-pressed={view === v}
+                className={`min-h-10 rounded-lg px-4 text-sm font-bold ${view === v ? "bg-cream text-wine" : "text-cream-muted"}`}
+              >
+                {v === "cards" ? "Cards" : "List"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {rows && rows.length > 0 && shown.length === 0 && <p className="text-cream-muted">No one matches these filters.</p>}
 
-      <ul className="flex flex-col gap-3">
-        {shown.map((r) => {
-          const age = ageText(r);
-          const place = [r.city, r.country].filter(Boolean).join(", ");
-          const photo = r.photo_path ? photos[r.photo_path] : undefined;
-          return (
-            <li key={r.id}>
-              <Link href={`/person?id=${r.id}`} className="card flex items-center gap-3 p-3 active:opacity-80">
-                {photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photo} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
-                ) : (
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-cream text-lg font-bold text-wine">
-                    {r.first_name[0]}
-                    {r.surname[0]}
+      {view === "cards" ? (
+        <ul className="grid grid-cols-2 gap-3">
+          {shown.map((r) => {
+            const age = ageText(r);
+            const photo = r.photo_path ? photos[r.photo_path] : undefined;
+            return (
+              <li key={r.id} className="min-w-0">
+                <Link href={`/person?id=${r.id}`} className="card flex h-full flex-col overflow-hidden active:opacity-80">
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo} alt="" className="aspect-[4/5] w-full object-cover" />
+                  ) : (
+                    <span className="flex aspect-[4/5] w-full items-center justify-center bg-[linear-gradient(160deg,var(--wine-band),var(--wine-card))] font-display text-5xl italic text-blush">
+                      {r.first_name[0]}
+                      {r.surname[0]}
+                    </span>
+                  )}
+                  <span className="flex min-w-0 flex-1 flex-col gap-1 p-3">
+                    <span className="truncate text-base font-bold leading-tight">{fullName(r)}</span>
+                    <span className="truncate text-sm text-cream-muted">{[age, r.city || r.country].filter(Boolean).join(" · ") || (r.gender === "male" ? "Man" : "Woman")}</span>
+                    <span className="mt-auto pt-1">
+                      <StatusPill status={r.status} />
+                    </span>
                   </span>
-                )}
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="truncate text-lg font-bold">{fullName(r)}</span>
-                  <span className="truncate text-sm text-cream-muted">
-                    {[age, place, r.height_cm ? heightText(r.height_cm).split(" · ")[1] : ""].filter(Boolean).join(" · ") || (r.gender === "male" ? "Man" : "Woman")}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {shown.map((r) => {
+            const age = ageText(r);
+            const place = [r.city, r.country].filter(Boolean).join(", ");
+            const photo = r.photo_path ? photos[r.photo_path] : undefined;
+            return (
+              <li key={r.id}>
+                <Link href={`/person?id=${r.id}`} className="card flex items-center gap-3 p-3 active:opacity-80">
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photo} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />
+                  ) : (
+                    <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-cream text-xl font-bold text-wine">
+                      {r.first_name[0]}
+                      {r.surname[0]}
+                    </span>
+                  )}
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate text-lg font-bold">{fullName(r)}</span>
+                    <span className="truncate text-sm text-cream-muted">
+                      {[age, place, r.height_cm ? heightText(r.height_cm).split(" · ")[1] : ""].filter(Boolean).join(" · ") || (r.gender === "male" ? "Man" : "Woman")}
+                    </span>
+                    <span>
+                      <StatusPill status={r.status} />
+                    </span>
                   </span>
-                  <span>
-                    <StatusPill status={r.status} />
-                  </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Shell>
   );
 }

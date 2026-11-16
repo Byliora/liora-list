@@ -71,6 +71,8 @@ export type Person = {
   status: Status;
   phone: string | null;
   email: string | null;
+  instagram: string | null;
+  linkedin: string | null;
   contact_who: "single" | "mother" | "father" | "other" | null;
   contact_name: string | null;
   contact_phone: string | null;
@@ -149,4 +151,24 @@ export function toCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
   const cols = Object.keys(rows[0]);
   return [cols.join(","), ...rows.map((r) => cols.map((c) => csvCell(r[c])).join(","))].join("\r\n");
+}
+
+/** Accepts "@name", "name" or a full instagram.com link; returns the bare handle. */
+export function cleanInstagram(v: string): string {
+  return v
+    .trim()
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+    .replace(/^@/, "")
+    .replace(/[/?#].*$/, "");
+}
+
+export function instagramUrl(handle: string): string {
+  return `https://www.instagram.com/${encodeURIComponent(cleanInstagram(handle))}/`;
+}
+
+/** Accepts a full LinkedIn link or just the profile name from linkedin.com/in/<name>. */
+export function linkedinUrl(v: string): string {
+  const t = v.trim();
+  if (/linkedin\.com\//i.test(t)) return /^https?:\/\//i.test(t) ? t : `https://${t.replace(/^\/+/, "")}`;
+  return `https://www.linkedin.com/in/${encodeURIComponent(t.replace(/^@/, ""))}/`;
 }

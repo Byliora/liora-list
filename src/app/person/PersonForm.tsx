@@ -12,6 +12,9 @@ import {
   KOSHER_LABELS,
   RELIGIOUS_LABELS,
   communityText,
+  cleanInstagram,
+  instagramUrl,
+  linkedinUrl,
   STATUSES,
   ageText,
   cmToFtIn,
@@ -40,6 +43,8 @@ const EMPTY: Draft = {
   status: "Available",
   phone: null,
   email: null,
+  instagram: null,
+  linkedin: null,
   contact_who: null,
   contact_name: null,
   contact_phone: null,
@@ -161,6 +166,32 @@ function ContactButtons({ phone, email }: { phone: string | null; email: string 
         </>
       )}
       {email && <a href={`mailto:${email}`} className="btn-ghost flex items-center">Email</a>}
+    </div>
+  );
+}
+
+function SocialButtons({ instagram, linkedin }: { instagram: string | null; linkedin: string | null }) {
+  if (!instagram && !linkedin) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {instagram && (
+        <a href={instagramUrl(instagram)} target="_blank" rel="noreferrer" className="btn-ghost flex items-center gap-2">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+          </svg>
+          Instagram
+        </a>
+      )}
+      {linkedin && (
+        <a href={linkedinUrl(linkedin)} target="_blank" rel="noreferrer" className="btn-ghost flex items-center gap-2">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="currentColor">
+            <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.5h4V21H3V9.5Zm7 0h3.8v1.6h.06c.53-1 1.84-2.06 3.79-2.06 4.05 0 4.8 2.67 4.8 6.13V21h-4v-5.1c0-1.22-.02-2.78-1.7-2.78-1.7 0-1.96 1.33-1.96 2.7V21H10V9.5Z" />
+          </svg>
+          LinkedIn
+        </a>
+      )}
     </div>
   );
 }
@@ -325,7 +356,7 @@ export function PersonForm() {
           <div className="flex items-center gap-3">
             {photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoUrl} alt="" className="h-20 w-20 rounded-full object-cover" />
+              <img src={photoUrl} alt="" className="h-32 w-28 shrink-0 rounded-2xl object-cover" />
             ) : null}
             <div className="flex flex-col items-start gap-1">
               <StatusPill status={draft.status} />
@@ -346,6 +377,7 @@ export function PersonForm() {
             </span>
             <ContactButtons phone={draft.contact_phone || draft.phone} email={draft.contact_email || draft.email} />
           </div>
+          <SocialButtons instagram={draft.instagram} linkedin={draft.linkedin} />
         </div>
       )}
 
@@ -535,7 +567,7 @@ export function PersonForm() {
           </fieldset>
         </Section>
 
-        <Section title="Main contact" open={isNew}>
+        <Section title="Contact and social" open={isNew}>
           <Field label="Who to contact">
             <select id="contact_who" className="field" {...text("contact_who")}>
               <option value="">Not set</option>
@@ -559,6 +591,20 @@ export function PersonForm() {
           </Field>
           <Field label="The single's own email">
             <input id="email" type="email" className="field" {...text("email")} />
+          </Field>
+          <Field label="Instagram" hint="Their handle, e.g. @sarah.cohen, or paste their profile link.">
+            <input
+              id="instagram"
+              className="field"
+              autoCapitalize="none"
+              autoCorrect="off"
+              inputMode="url"
+              value={draft.instagram ? `@${draft.instagram}` : ""}
+              onChange={(e) => set("instagram", cleanInstagram(e.target.value) || null)}
+            />
+          </Field>
+          <Field label="LinkedIn" hint="Paste their profile link from the LinkedIn app (Share profile, then Copy link).">
+            <input id="linkedin" className="field" autoCapitalize="none" autoCorrect="off" inputMode="url" {...text("linkedin")} />
           </Field>
         </Section>
 

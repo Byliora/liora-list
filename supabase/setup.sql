@@ -43,6 +43,8 @@ create index if not exists people_owner_idx on public.people (owner_id);
 -- and community "type" tick boxes. Written so re-running upgrades an older copy.
 alter table public.people add column if not exists kosher_level smallint;
 alter table public.people add column if not exists community text[];
+alter table public.people add column if not exists instagram text;
+alter table public.people add column if not exists linkedin text;
 alter table public.people drop constraint if exists people_religious_level_check;
 update public.people set religious_level = 4 where religious_level > 4;
 alter table public.people add constraint people_religious_level_check check (religious_level between 1 and 4);
