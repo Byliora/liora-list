@@ -16,7 +16,14 @@ export function Login() {
     setError(null);
     const { error } = await db().auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (error) setError("That email and password didn't match. Check them and try again.");
+    if (!error) return;
+    if (/api key/i.test(error.message)) {
+      setError("The app can't connect to its database. This is a setup problem, not your password.");
+    } else if (error.status === 400 || /invalid login/i.test(error.message)) {
+      setError("That email and password didn't match. Check them and try again.");
+    } else {
+      setError("Couldn't sign in right now. Check your signal and try again.");
+    }
   }
 
   return (
