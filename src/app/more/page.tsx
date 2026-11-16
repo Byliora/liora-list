@@ -8,6 +8,7 @@ import { Star } from "@/components/Star";
 import { db } from "@/lib/supabase";
 import { COUNTRIES, toCsv } from "@/lib/people";
 import { useSettings } from "@/lib/settings";
+import { PERSONAL_NOTE } from "@/lib/note";
 
 function download(name: string, csv: string) {
   const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
@@ -168,6 +169,18 @@ function More() {
 
   return (
     <Shell title="More">
+      <section aria-label={`A note from ${PERSONAL_NOTE.signature}`} className="relative overflow-hidden rounded-2xl border border-blush/40 bg-[linear-gradient(160deg,var(--wine-band),var(--wine-card))] px-5 pb-5 pt-6">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(246,201,207,.25)_0%,transparent_70%)]" />
+        <Star className="absolute right-5 top-5 h-5 w-5 text-blush" />
+        <div className="relative flex flex-col gap-3 font-display text-xl italic leading-snug text-cream">
+          <p className="text-2xl text-blush">{PERSONAL_NOTE.greeting}</p>
+          {PERSONAL_NOTE.body.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <p className="self-end pr-2 text-2xl text-blush">{PERSONAL_NOTE.signature}</p>
+        </div>
+      </section>
+
       <Link href="/mazal-tov" className="card relative flex items-center justify-between gap-3 overflow-hidden p-4 active:opacity-80">
         <span className="flex flex-col">
           <span className="font-display text-3xl italic text-blush">Mazal tov wall</span>
