@@ -5,7 +5,6 @@ import "@fontsource/source-sans-3/400.css";
 import "@fontsource/source-sans-3/600.css";
 import "@fontsource/source-sans-3/700.css";
 import "./globals.css";
-import { DemoBanner } from "@/components/DemoBanner";
 
 export const metadata: Metadata = {
   title: "The Liora List",
@@ -23,10 +22,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-GB" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
-        <DemoBanner />
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

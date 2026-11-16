@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { db } from "@/lib/supabase";
 import { Wordmark } from "./Wordmark";
+import { DemoBanner } from "./DemoBanner";
 
 const NAV = [
   { href: "/", label: "People" },
@@ -21,6 +22,7 @@ export function Shell({ title, action, children }: { title: string; action?: Rea
           <Wordmark className="text-2xl" />
           {action}
         </div>
+        <DemoBanner className="mx-auto mt-2 max-w-2xl" />
       </header>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-4 pb-28 pt-4">
         <h1 className="font-display text-3xl italic text-blush">{title}</h1>

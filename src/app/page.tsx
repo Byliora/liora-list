@@ -88,14 +88,14 @@ function PeopleList() {
           className="field"
           aria-label="Search by name"
         />
-        <div className="grid grid-cols-2 gap-2">
-          <select id="filter-gender" aria-label="Gender" className="field" value={gender} onChange={(e) => setGender(e.target.value as typeof gender)}>
+        <div className="grid grid-cols-2 gap-2 [&>*]:min-w-0">
+          <select id="filter-gender" aria-label="Gender" className="field min-w-0 truncate" value={gender} onChange={(e) => setGender(e.target.value as typeof gender)}>
             <option value="all">Everyone</option>
             <option value="male">Men</option>
             <option value="female">Women</option>
           </select>
-          <select id="filter-status" aria-label="Status" className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="active">Active (hide engaged, married, withdrawn)</option>
+          <select id="filter-status" aria-label="Status" className="field min-w-0 truncate" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="active">Active only</option>
             <option value="all">All statuses</option>
             {STATUSES.map((s) => (
               <option key={s} value={s}>

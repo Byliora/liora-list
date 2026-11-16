@@ -32,6 +32,7 @@ html,
 body {
   background: var(--wine);
   color: var(--cream);
+  overflow-x: clip;
 }
 
 body {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { db } from "@/lib/supabase";
 import { Wordmark } from "./Wordmark";
+import { DemoBanner } from "./DemoBanner";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -33,6 +34,7 @@ export function Login() {
         className="pointer-events-none absolute -right-24 -top-28 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(246,201,207,.22)_0%,transparent_70%)]"
       />
       <form onSubmit={submit} className="relative mx-auto flex w-full max-w-sm flex-col gap-4">
+        <DemoBanner className="self-start" />
         <Wordmark className="text-4xl" />
         <p className="font-display text-3xl italic leading-tight text-blush">Bringing two lights together.</p>
         <p className="text-cream-muted">Welcome back, Liora.</p>
